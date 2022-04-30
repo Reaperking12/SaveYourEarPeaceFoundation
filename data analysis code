@@ -1,0 +1,120 @@
+
+/*importing the data*/
+FILENAME REFFILE '/home/u49592241/sasuser.v94/Ear Peace Foundation - VIctor Ortiz Post-Presentation Data.xlsx';
+
+PROC IMPORT DATAFILE=REFFILE DBMS=XLSX OUT=WORK.post0 replace;
+	GETNAMES=yes;
+RUN;
+
+PROC CONTENTS DATA=WORK.post0;
+RUN;
+
+/*importing the data*/
+FILENAME FILE '/home/u49592241/sasuser.v94/Ear Peace Foundation - Victor Ortiz Pre-Presentation Data.xlsx';
+
+PROC IMPORT DATAFILE=FILE DBMS=XLSX OUT=WORK.pre0 replace;
+	GETNAMES=yes;
+RUN;
+
+PROC CONTENTS DATA=WORK.pre0;
+RUN;
+
+/*importing the data*/
+FILENAME REFFILES '/home/u49592241/sasuser.v94/responses_surveymonkey.xlsx';
+
+PROC IMPORT DATAFILE=REFFILES DBMS=XLSX OUT=WORK.import;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=WORK.IMPORT;
+RUN;
+
+/*sorting the data by id and creating a new dataset*/
+proc sort data=post0 out=sortedpost nodupkey;
+	by id;
+run;
+
+proc sort data=pre0 out=sortedpre nodupkey;
+	by id;
+run;
+
+/*creating a new dataset pretest and creating new variable new_id by changging character variables to numeric*/
+data pretest (drop=id);
+	set sortedpre;
+	new_id=input(id, 4.);
+run;
+
+/*sorting data by new_id*/
+proc sort data=pretest;
+	by new_id;
+run;
+
+/*creating two datasets monkeypre and monnkey post and
+determining where the data would be sent to by the survey type*/
+data monkeypre(rename=(response_correct=preanswers)) monkeypost;
+	set import;
+
+	if survey_type="Pre-Survey" then
+		output monkeypre;
+
+	if survey_type="Post-test" then
+		output monkeypost;
+run;
+
+/*combining datasets monkeypre,sortedpre,sortedpost, and monkeypost to dataset totaltest*/
+data totaltest (keep=preanswers response_correct gender grade id);
+	merge sortedpost(keep=response_correct gender grade id) 
+		pretest(rename=(response_correct=preanswers) rename=(new_id=id)) 
+		monkeypre(keep=preanswers gender grade id) monkeypost(keep=response_correct 
+		gender grade id);
+	gender=upcase(gender);
+	grade=upcase(grade);
+	by id;
+run;
+
+/*creating a boxplot based on number of correct answers in the posttest by grade*/
+proc sgplot data=totaltest;
+	vbox response_correct / category=grade;
+run;
+
+/*creating a boxplot based on number of correct answers in the pretest by grade*/
+proc sgplot data=totaltest;
+	vbox preanswers / category=grade;
+run;
+
+/*running a descriptive statistics for variables response correct and preanswers based on gender*/
+proc means data=totaltest mean median min std maxdec=0;
+	class gender;
+	var response_correct preanswers;
+run;
+
+/*creating frequency and cross-tabulation tables based on grade and gender*/
+proc freq data=totaltest;
+	tables grade*gender;
+run;
+
+ods noproctitle;
+ods graphics / imagemap=on;
+
+data Work._Paired_diffs_;
+	set WORK.TOTALTEST;
+	_Difference_=response_correct - preanswers;
+	label _Difference_="Difference: response_correct - preanswers";
+run;
+
+/* Test for normality */
+title "paired t-test";
+
+proc univariate data=Work._Paired_diffs_ normal mu0=0;
+	ods select TestsForNormality;
+	var _Difference_;
+run;
+
+/* t test */
+proc ttest data=WORK.TOTALTEST sides=2 h0=0 plots(showh0);
+	paired response_correct*preanswers;
+run;
+
+/* Clean up */
+proc delete data=work._paired_diffs_;
+run;
