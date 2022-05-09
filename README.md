@@ -1,5 +1,5 @@
 # SaveYourEarPeaceFoundation
-data analysis for Ear Peace Foundation
+data analysis of noise induced hearing loss modulce from the ear peace foundation. 30 participants were collected of mix ages and was determined that module is effective in educating about noise induced hearing loss.
 ![Results_ captsone sas_Page_01](https://user-images.githubusercontent.com/39630737/166335080-d7e9e9a6-64c8-4de5-bfa3-3863b2ea74dc.jpg)
 ![Results_ captsone sas_Page_02](https://user-images.githubusercontent.com/39630737/166335087-ea602341-03ce-4190-8e4c-0fa2e495b847.jpg)
 ![Results_ captsone sas_Page_03](https://user-images.githubusercontent.com/39630737/166335091-9f74a64b-0389-4591-bd55-e5b74c31c949.jpg)
